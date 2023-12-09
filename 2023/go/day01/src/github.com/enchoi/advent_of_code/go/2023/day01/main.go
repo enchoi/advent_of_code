@@ -3,9 +3,15 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
+	"regexp"
+	"sort"
 	"strings"
-	"unicode"
+)
+
+var (
+	digits = map[string]int{"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+		"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9}
+	digitsKeys = []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 )
 
 func main() {
@@ -14,37 +20,36 @@ func main() {
 	if err != nil {
 		panic("no such file")
 	}
-	// fmt.Printf("%v", string(data))
+
 	data_str := string(data)
 
 	sum := 0
 	for _, data := range strings.Split(data_str, "\n") {
-		first := getFirstDigit(data)
-		rev := reverseString(data)
-		last := getFirstDigit(rev)
-		sum += first*10 + last
+		hashmap := getDigits(data)
+		keys := getMapKey(hashmap)
+		sum += hashmap[keys[0]]*10 + hashmap[keys[len(keys)-1]]
 	}
 
 	fmt.Printf("The result is : %v\n", sum)
 }
 
-func getFirstDigit(line string) int {
-	for _, r := range line {
-		if unicode.IsDigit(r) {
-			integer, _ := strconv.ParseInt(string(r), 10, 64)
-			return int(integer)
+func getDigits(line string) map[int]int {
+	hashmap := make(map[int]int)
+	for _, str := range digitsKeys {
+		r := regexp.MustCompile(str)
+		matches := r.FindAllIndex([]byte(line), -1)
+		for _, match := range matches {
+			hashmap[match[0]] = digits[str]
 		}
 	}
-	return 0
+	return hashmap
 }
 
-// it's a copy but I whant to rewrite it to check if a understand the logic
-func reverseString(s string) string {
-	// transform it into runes
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < len(runes)/2; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
+func getMapKey(hashmap map[int]int) []int {
+	keys := make([]int, 0, len(hashmap))
+	for k := range hashmap {
+		keys = append(keys, k)
 	}
-	return string(runes)
-
+	sort.Ints(keys)
+	return keys
 }
