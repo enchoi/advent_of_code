@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::{Duration, Instant};
 
-#[derive(Eq, Debug, PartialEq, Hash)]
+#[derive(Eq, Debug, PartialEq, Hash, Clone)]
 enum Color {
     Blue,
     Green,
@@ -37,7 +37,7 @@ fn main() {
     let file_name = "src/input.txt";
     let input = fs::read_to_string(file_name).unwrap();
     let data = input.as_str();
-    // let data = INPUT;
+    // let data = _INPUT;
     let games = parse_games(data);
     let result: u32 = games
         .iter()
@@ -56,6 +56,29 @@ fn main() {
     let duration = start.elapsed();
     println!("Result is : {}", result);
     println!("Done in {:?}", duration);
+
+    // part 2
+    let mut new_games = games.clone();
+    let power = new_games
+        .iter_mut()
+        .map(|(_, hands)| {
+            let mut mini = HashMap::new();
+            for hand in hands.iter_mut() {
+                for (color, dices) in hand.iter_mut() {
+                    mini.entry(color)
+                        .and_modify(|c: &mut u32| *c = *c.max(dices))
+                        .or_insert(*dices);
+                }
+            }
+            return mini;
+        })
+        .collect::<Vec<HashMap<&Color, u32>>>();
+
+    let result = power
+        .iter()
+        .map(|hand| hand.values().fold(1_u32, |acc, v| acc * *v))
+        .sum::<u32>();
+    println!("result: {}", result);
 }
 
 fn parse_games(data: &str) -> HashMap<u32, Vec<HashMap<Color, u32>>> {
