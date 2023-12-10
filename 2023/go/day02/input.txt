@@ -1,0 +1,1 @@
+../../../../advent_of_code/2023/rust/day02/src/input.txt
