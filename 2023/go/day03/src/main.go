@@ -36,7 +36,7 @@ func main() {
 	reg_symbols := regexp.MustCompile(`(\*|\#|\+|\$|\/|\@|\%|\&|\=|\-)`)
 
 	content := _training
-	content = getFileContent("input.txt")
+	content = getFileContent("src/input.txt")
 	numbers := getMatches(reg_numbers, &content)
 	symbols := getMatches(reg_symbols, &content)
 
@@ -63,7 +63,7 @@ func getMatches(pattern *regexp.Regexp, text *string) []Match {
 }
 
 func getFileContent(path string) string {
-	data, err := os.ReadFile("src/input.txt")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		panic("Nope")
 	}
