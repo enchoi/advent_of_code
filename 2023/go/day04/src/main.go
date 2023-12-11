@@ -29,11 +29,8 @@ func main() {
 	points := computeCards(cards)
 
 	// sum total points
-	total := 0
-	for _, point := range points {
-		total += point
-	}
-	fmt.Printf("Total: %v\n", total)
+	getSumPoint(points)
+	countCards(points)
 
 }
 
@@ -89,10 +86,7 @@ numbers:
 			}
 		}
 	}
-	if sum == 0 {
-		return sum
-	}
-	return 1 << (sum - 1)
+	return sum
 }
 
 func computeCards(cards map[int64]Pair) map[int64]int {
@@ -101,4 +95,34 @@ func computeCards(cards map[int64]Pair) map[int64]int {
 		points[card] = computePoint(pair.winner, pair.numbers)
 	}
 	return points
+}
+
+func getSumPoint(points map[int64]int) {
+
+	total := 0
+	for _, point := range points {
+		total += point
+	}
+	fmt.Printf("Total: %v\n", total)
+}
+
+func countCards(points map[int64]int) {
+	sum := 0
+	for key, _ := range points {
+		sum += countCopies(&points, int64(key))
+	}
+	fmt.Printf("Total cards: %v\n", sum)
+}
+
+func countCopies(points *map[int64]int, card int64) int {
+	sum := 1
+	copies, ok := (*points)[card]
+	if !ok {
+		return 0
+	}
+	for i := card + 1; i < card+1+int64(copies); i++ {
+		sum += countCopies(points, i)
+	}
+	return sum
+
 }
