@@ -55,15 +55,27 @@ fn compute_points(cards: HashMap<u32, (Vec<u32>, Vec<u32>)>) -> HashMap<u32, u32
     let mut points = HashMap::new();
     cards.iter().for_each(|(card, (winner, numbers))| {
         let shift = numbers.iter().filter(|n| winner.contains(n)).count();
-        let point = match shift {
-            0 => 0,
-            _ => 1 << (shift - 1),
-        };
-        points.insert(card.clone(), point);
+        points.insert(card.clone(), shift as u32);
     });
     points
 }
 
 fn compute_total(points: HashMap<u32, u32>) -> u32 {
-    points.values().sum()
+    let mut sum = 0;
+    for card in points.keys() {
+        sum += get_number_cards(&points, *card);
+    }
+    sum
+}
+
+fn get_number_cards(points: &HashMap<u32, u32>, card: u32) -> u32 {
+    let mut sum = 1;
+    if let Some(copies) = points.get(&card) {
+        for copy in card + 1..card + 1 + copies {
+            sum += get_number_cards(points, copy);
+        }
+    } else {
+        return 0;
+    }
+    sum
 }
