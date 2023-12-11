@@ -20,10 +20,15 @@ const _training string = `467..114..
 .664.598..`
 
 type Match struct {
-	Start int
-	End   int
-	Line  int
-	Value string
+	Start  int
+	End    int
+	Line   int
+	Value  string
+	Symbol *Match
+}
+type Pair struct {
+	First Match
+	Last  Match
 }
 
 func main() {
@@ -40,6 +45,10 @@ func main() {
 
 	result := computeResult(valid_numbers)
 	fmt.Printf("result: %v\n", result)
+
+	gears := getGears(valid_numbers)
+	sum_gear := ComputeSumGears(gears)
+	fmt.Printf("Gears sum: %v\n", sum_gear)
 }
 
 func getMatches(pattern *regexp.Regexp, text *string) []Match {
@@ -64,11 +73,12 @@ func getFileContent(path string) string {
 func getValidNumbers(numbers, symbols []Match) []Match {
 	valid := make([]Match, 0)
 	for _, number := range numbers {
-		for _, symbol := range symbols {
+		for idx, symbol := range symbols {
 			if symbol.End >= number.Start &&
 				symbol.Start <= number.End &&
 				symbol.Line >= number.Line-1 &&
 				symbol.Line <= number.Line+1 {
+				number.Symbol = &symbols[idx]
 				valid = append(valid, number)
 			}
 		}
@@ -84,4 +94,46 @@ func computeResult(valids []Match) int {
 		}
 	}
 	return sum
+}
+
+func getGears(matches []Match) []Pair {
+	gears := make([]Pair, 0)
+	found := make([]*Match, 0, len(matches))
+	for index, m1 := range matches {
+		for idx, m2 := range matches {
+			if idx <= index {
+				continue
+			}
+			if m1.Symbol.Value != "*" {
+				continue
+			}
+			for _, match := range found {
+				if *match == m1 || *match == m2 {
+					continue
+				}
+			}
+
+			if m1.Symbol == m2.Symbol {
+				gears = append(gears, Pair{First: m1, Last: m2})
+				found = append(found, &m1)
+			}
+		}
+	}
+	return gears
+}
+
+func ComputeSumGears(gears []Pair) int {
+	sum := 0
+	for _, gear := range gears {
+		sum += getNumericMatchValue(gear.First) * getNumericMatchValue(gear.Last)
+	}
+	return sum
+}
+
+func getNumericMatchValue(m Match) int {
+	if value, err := strconv.Atoi(m.Value); err == nil {
+		return value
+	} else {
+		panic("cannot parse Match")
+	}
 }
