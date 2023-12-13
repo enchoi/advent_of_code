@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::fs;
+use std::ops::Range;
+use std::sync::{Arc, RwLock};
+use std::thread;
 
 const _TRAINING: &str = "seeds: 79 14 55 13
 
@@ -35,6 +38,7 @@ humidity-to-location map:
 60 56 37
 56 93 4";
 
+#[derive(Clone, Copy)]
 enum StateMapper {
     SeedToSoil,
     SoilToFertilizer,
@@ -52,7 +56,7 @@ enum StateParser {
     Mapping,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Mapper {
     pub source: u64,
     pub destination: u64,
@@ -61,10 +65,11 @@ struct Mapper {
 
 impl Mapper {
     pub fn is_in(&self, value: u64) -> bool {
-        (self.source..self.source + self.range).contains(&value)
+        // (self.source..self.source + self.range).contains(&value)
+        self.source <= value && self.source + self.range > value
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Mappers {
     mappers: Vec<Mapper>,
 }
@@ -96,9 +101,19 @@ fn main() {
     // let data = _TRAINING;
     let data = get_file_content("src/input.txt");
     let (seeds, mappers) = parse_data(&data);
+    let seeds = add_seeds(seeds);
     // println!("seeds: {:?}", seeds);
     // println!("mappers: {:#?}", mappers);
-    compute_part1(&mappers, &seeds);
+    compute_part1(mappers, seeds);
+}
+
+fn add_seeds(seeds: Vec<u64>) -> Vec<Range<u64>> {
+    let mut new_seeds = Vec::new();
+    for i in (0..seeds.len()).filter(|n| n % 2 == 0) {
+        // new_seeds.extend(seeds[i]..seeds[i] + seeds[i + 1])
+        new_seeds.push(seeds[i]..seeds[i] + seeds[i + 1])
+    }
+    new_seeds
 }
 
 fn get_file_content(file_name: &str) -> String {
@@ -158,48 +173,88 @@ fn parse_data(data: &str) -> (Vec<u64>, HashMap<String, Mappers>) {
     (seeds, mappers)
 }
 
-fn get_mapped_value(mappers: &HashMap<String, Mappers>, value: u64, type_: StateMapper) -> u64 {
-    match type_ {
-        StateMapper::SeedToSoil => get_mapped_value(
-            mappers,
-            mappers["seed-to-soil"].get_destination(value),
-            StateMapper::SoilToFertilizer,
-        ),
-        StateMapper::SoilToFertilizer => get_mapped_value(
-            mappers,
-            mappers["soil-to-fertilizer"].get_destination(value),
-            StateMapper::FertilizerToWater,
-        ),
-        StateMapper::FertilizerToWater => get_mapped_value(
-            mappers,
-            mappers["fertilizer-to-water"].get_destination(value),
-            StateMapper::WaterToLight,
-        ),
-        StateMapper::WaterToLight => get_mapped_value(
-            mappers,
-            mappers["water-to-light"].get_destination(value),
-            StateMapper::LightToTemperature,
-        ),
-        StateMapper::LightToTemperature => get_mapped_value(
-            mappers,
-            mappers["light-to-temperature"].get_destination(value),
-            StateMapper::TemperatureToHumidity,
-        ),
-        StateMapper::TemperatureToHumidity => get_mapped_value(
-            mappers,
-            mappers["temperature-to-humidity"].get_destination(value),
-            StateMapper::HumidityToLocation,
-        ),
-        StateMapper::HumidityToLocation => mappers["humidity-to-location"].get_destination(value),
-    }
+fn get_mapped_value(mappers: HashMap<String, Mappers>, value: u64, type_: StateMapper) -> u64 {
+    let next_type = match type_ {
+        StateMapper::SeedToSoil => "seed-to-soil",
+        // get_mapped_value
+        // (
+        //     mappers,
+        //     mappers["seed-to-soil"].get_destination(value),
+        //     StateMapper::SoilToFertilizer,
+        // )
+        StateMapper::SoilToFertilizer => "soil-to-fertilizer",
+        //  get_mapped_value(
+        //     mappers,
+        //     mappers["soil-to-fertilizer"].get_destination(value),
+        //     StateMapper::FertilizerToWater,
+        // )
+        StateMapper::FertilizerToWater => "fertilizer-to-water",
+        //  get_mapped_value(
+        //     mappers,
+        //     mappers["fertilizer-to-water"].get_destination(value),
+        //     StateMapper::WaterToLight,
+        // )
+        StateMapper::WaterToLight => "water-to-light",
+        //  get_mapped_value(
+        //     mappers,
+        //     mappers["water-to-light"].get_destination(value),
+        //     StateMapper::LightToTemperature,
+        // )
+        StateMapper::LightToTemperature => "light-to-temperature",
+        //  get_mapped_value(
+        //     mappers,
+        //     mappers["light-to-temperature"].get_destination(value),
+        //     StateMapper::TemperatureToHumidity,
+        // )
+        StateMapper::TemperatureToHumidity => "temperature-to-humidity",
+        //  get_mapped_value(
+        //     mappers,
+        //     mappers["temperature-to-humidity"].get_destination(value),
+        //     StateMapper::HumidityToLocation,
+        // )
+        StateMapper::HumidityToLocation => {
+            return mappers["humidity-to-location"].get_destination(value)
+        }
+    };
+    return get_mapped_value(
+        mappers.clone(),
+        mappers[next_type].get_destination(value),
+        StateMapper::HumidityToLocation,
+    );
 }
 
-fn compute_part1(mappers: &HashMap<String, Mappers>, seeds: &Vec<u64>) {
-    let mut closest = u64::MAX;
-    for seed in seeds {
-        let location = get_mapped_value(mappers, *seed, StateMapper::SeedToSoil);
-        // println!("Seed: {} => location: {}", seed, location);
-        closest = closest.min(location)
+fn compute_part1(mappers: HashMap<String, Mappers>, seeds: Vec<Range<u64>>) {
+    let mut handels = Vec::new();
+    let lock: Arc<RwLock<HashMap<u64, u64>>> = Arc::new(RwLock::new(HashMap::new()));
+
+    for range in seeds {
+        let copy = mappers.clone();
+        let io = Arc::clone(&lock);
+        let handle = thread::spawn(move || {
+            let mut mini = u64::MAX;
+            for seed in range {
+                let is_here = { io.read().unwrap().get(&seed).and_then(|v| Some(*v)) };
+                let location: u64;
+                if let Some(x) = is_here {
+                    location = x;
+                } else {
+                    location = get_mapped_value(copy.clone(), seed, StateMapper::SeedToSoil);
+                    let mut io = io.write().unwrap();
+                    io.insert(seed, location);
+                }
+                // println!("Seed: {} => location: {}", seed, location);
+                mini = mini.min(location)
+            }
+            mini
+        });
+        handels.push(handle);
     }
+
+    let mut results = Vec::new();
+    for thread in handels {
+        results.push(thread.join().unwrap());
+    }
+    let closest = results.iter().min().unwrap();
+
     println!("The closest location is: {}", closest);
 }
