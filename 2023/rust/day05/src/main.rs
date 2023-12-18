@@ -65,7 +65,6 @@ struct Mapper {
 
 impl Mapper {
     pub fn is_in(&self, value: u64) -> bool {
-        // (self.source..self.source + self.range).contains(&value)
         self.source <= value && self.source + self.range > value
     }
 }
@@ -102,15 +101,12 @@ fn main() {
     let data = get_file_content("src/input.txt");
     let (seeds, mappers) = parse_data(&data);
     let seeds = add_seeds(seeds);
-    // println!("seeds: {:?}", seeds);
-    // println!("mappers: {:#?}", mappers);
     compute_part1(mappers, seeds);
 }
 
 fn add_seeds(seeds: Vec<u64>) -> Vec<Range<u64>> {
     let mut new_seeds = Vec::new();
     for i in (0..seeds.len()).filter(|n| n % 2 == 0) {
-        // new_seeds.extend(seeds[i]..seeds[i] + seeds[i + 1])
         new_seeds.push(seeds[i]..seeds[i] + seeds[i + 1])
     }
     new_seeds
@@ -176,42 +172,11 @@ fn parse_data(data: &str) -> (Vec<u64>, HashMap<String, Mappers>) {
 fn get_mapped_value(mappers: HashMap<String, Mappers>, value: u64, type_: StateMapper) -> u64 {
     let next_type = match type_ {
         StateMapper::SeedToSoil => "seed-to-soil",
-        // get_mapped_value
-        // (
-        //     mappers,
-        //     mappers["seed-to-soil"].get_destination(value),
-        //     StateMapper::SoilToFertilizer,
-        // )
         StateMapper::SoilToFertilizer => "soil-to-fertilizer",
-        //  get_mapped_value(
-        //     mappers,
-        //     mappers["soil-to-fertilizer"].get_destination(value),
-        //     StateMapper::FertilizerToWater,
-        // )
         StateMapper::FertilizerToWater => "fertilizer-to-water",
-        //  get_mapped_value(
-        //     mappers,
-        //     mappers["fertilizer-to-water"].get_destination(value),
-        //     StateMapper::WaterToLight,
-        // )
         StateMapper::WaterToLight => "water-to-light",
-        //  get_mapped_value(
-        //     mappers,
-        //     mappers["water-to-light"].get_destination(value),
-        //     StateMapper::LightToTemperature,
-        // )
         StateMapper::LightToTemperature => "light-to-temperature",
-        //  get_mapped_value(
-        //     mappers,
-        //     mappers["light-to-temperature"].get_destination(value),
-        //     StateMapper::TemperatureToHumidity,
-        // )
         StateMapper::TemperatureToHumidity => "temperature-to-humidity",
-        //  get_mapped_value(
-        //     mappers,
-        //     mappers["temperature-to-humidity"].get_destination(value),
-        //     StateMapper::HumidityToLocation,
-        // )
         StateMapper::HumidityToLocation => {
             return mappers["humidity-to-location"].get_destination(value)
         }
@@ -242,7 +207,6 @@ fn compute_part1(mappers: HashMap<String, Mappers>, seeds: Vec<Range<u64>>) {
                     let mut io = io.write().unwrap();
                     io.insert(seed, location);
                 }
-                // println!("Seed: {} => location: {}", seed, location);
                 mini = mini.min(location)
             }
             mini
