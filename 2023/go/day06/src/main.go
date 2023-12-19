@@ -27,7 +27,8 @@ func parseData(data string) ([]int, []int) {
 
 func getInt(line string) []int {
 	ints := make([]int, 0)
-	for _, chunk := range strings.Split(line, " ") {
+	line = strings.Replace(line, " ", "", -1)
+	for _, chunk := range strings.Split(line, ":") {
 		if integer, err := strconv.Atoi(chunk); err == nil {
 			ints = append(ints, integer)
 		}
