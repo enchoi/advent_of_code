@@ -20,10 +20,8 @@ fn parse_data(data: &str) -> (Vec<usize>, Vec<usize>) {
 }
 
 fn get_ints(data: &str) -> Vec<usize> {
-    data.split("\n")
-        .next()
-        .unwrap()
-        .split(" ")
+    data.replace(" ", "")
+        .split(":")
         .skip(1)
         .map(|x| {
             if let Ok(int) = x.parse::<usize>() {
