@@ -1,0 +1,1 @@
+../../../rust/day07/src/input.txt
