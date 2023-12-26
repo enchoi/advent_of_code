@@ -10,7 +10,7 @@ KKKJ4 0";
 
 fn main() {
     let data = _TRAINING;
-    // let data = include_str!("input.txt");
+    let data = include_str!("input.txt");
     let hands: HashMap<String, i32> = parse_hands(data);
     // println!("hands: {:?}", hands);
     let hands_keys = hands.keys().map(|k| k.to_string()).collect::<Vec<_>>();
@@ -23,9 +23,9 @@ fn main() {
     hands_keys.sort();
 
     // println!("hands_sorted: {:?}", hands_keys);
-    for hand in hands_keys.iter() {
-        println!("{}", hand.to_string());
-    }
+    // for hand in hands_keys.iter() {
+    //     println!("{}", hand.to_string());
+    // }
     compute_score(hands, hands_keys);
 }
 

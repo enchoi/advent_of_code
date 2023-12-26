@@ -51,6 +51,11 @@ impl Hand {
                 joker_index.push(index);
             }
         }
+        // println!("");
+        // println!("hand: {:?}", cards);
+        // println!("template: {:?}", template);
+        // println!("joker indexes: {:?}", joker_index);
+        // println!("available cards: {:?}", available_cards);
 
         for idx in 0..joker_index.len() {
             for card in available_cards.iter() {
@@ -64,8 +69,19 @@ impl Hand {
                 }
             }
         }
+        let mut news = news
+            .iter()
+            .map(|hand| hand.iter().map(|truc| truc.to_string()).collect::<String>())
+            .map(|string| Hand::new(&string))
+            .collect::<Vec<Hand>>();
 
-        news[news.len() - 1].clone()
+        news.sort();
+        // for hand in news.iter() {
+        //     println!("{:?}", hand);
+        // }
+        // println!("possibilities: {:?}", news);
+
+        news[news.len() - 1].cards.clone()
     }
 
     pub fn to_string(&self) -> String {
