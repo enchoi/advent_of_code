@@ -10,7 +10,7 @@ func main() {
 
 	data := getFileContent("src/input.txt")
 	secquence, nodes := parseData(data)
-	computePart1(secquence, nodes)
+	computePart2(secquence, nodes)
 
 }
 
@@ -68,4 +68,45 @@ func computePart1(sequence []int, nodes map[string][]string) {
 		index++
 	}
 	fmt.Printf("Result: %v\n", index)
+}
+
+func computePart2(sequence []int, nodes map[string][]string) {
+	starts := make([]string, 0)
+	for key, _ := range nodes {
+		if key[len(key)-1] == 'A' {
+			starts = append(starts, key)
+		}
+	}
+	cycles := make([]int, 0)
+	for index := range starts {
+		cur := starts[index]
+		seq := 0
+		for cur[len(cur)-1] != 'Z' {
+			cur = nodes[cur][sequence[seq%len(sequence)]]
+			seq++
+		}
+		cycles = append(cycles, seq)
+	}
+	fmt.Printf("Result: %v\n", LCM(cycles[0], cycles[1], cycles[2:]...))
+}
+
+// greatest common divisor (GCD) via Euclidean algorithm
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+// find Least Common Multiple (LCM) via GCD
+func LCM(a, b int, integers ...int) int {
+	result := a * b / GCD(a, b)
+
+	for i := 0; i < len(integers); i++ {
+		result = LCM(result, integers[i])
+	}
+
+	return result
 }
